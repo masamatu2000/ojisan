@@ -18,7 +18,20 @@ namespace {
 		PLAYER_MAX,
 	};
 	PLAYER_STATE pstate = PLAYER_STATE::PLAYER_IDLE;
-	
+	/// <summary>
+	/// プレイヤーが最短角度で指定方向に回るようにする
+	/// </summary>
+	/// <param name="disAngle">回りたい方向と今の角度の差</param>
+	/// <returns></returns>
+	float TurnAngleOptmization(float disAngle) {
+		if (disAngle > 180.0f) {
+			return disAngle -= 360.0f;
+		}
+		if (disAngle < -180.0f) {
+			 return disAngle += 360.0f;
+		}
+		return disAngle;
+	}
 	float P_ANGLE[4] = { 90.0f,270.0f,180.0f,0.0f };
 	PLAYER_DIRECTION pdir = PLAYER_DOWN;
 	XMVECTOR P_MOVE[4] = { XMVectorSet(-1, 0, 0, 0),XMVectorSet(1, 0, 0, 0), XMVectorSet(0, 0, 1, 0) ,XMVectorSet(0, 0, -1, 0) };
@@ -58,7 +71,7 @@ void Player::Update()
 	static float angle = 0;
 	static float OldAngle;
 	static bool isRotating = false;
-	if (pstate != PLAYER_ROTATING) {
+	if (pstate != PLAYER_ROTATING) {//回転中はアイドル状態にしない
 		pstate = PLAYER_IDLE;
 	}
 	PLAYER_DIRECTION Predir = pdir;
@@ -99,14 +112,9 @@ void Player::Update()
 			angle = P_ANGLE[pdir];
 			//transform_.rotate_.y = angle;
 		}
+		//回転処理
 		else if (pstate == PLAYER_ROTATING) {
-			float disAngle = P_ANGLE[pdir] - OldAngle;
-			if (disAngle > 180.0f) {
-				disAngle -= 360.0f;
-			}
-			if (disAngle < -180.0f) {
-				disAngle += 360.0f;
-			}
+			float disAngle = TurnAngleOptmization(P_ANGLE[pdir] - OldAngle);
 			static float rotateCount = 0.0f;
 			rotateCount++;
 
@@ -142,8 +150,8 @@ void Player::Draw()
 		Model::Draw(hModel_Walk);
 		break;
 	case PLAYER_ROTATING:
-		Model::SetTransform(hSilly, transform_);
-		Model::Draw(hSilly);
+		Model::SetTransform(hModel_Walk, transform_);
+		Model::Draw(hModel_Walk);
 		break;
 	}
 }
