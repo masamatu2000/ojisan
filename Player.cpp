@@ -56,9 +56,11 @@ void Player::Update()
 	XMVECTOR move = XMVectorSet(0,0,0,0);
 	const float SPEED = 0.05f;
 	static float angle = 0;
-	float OldAngle;
+	static float OldAngle;
 	static bool isRotating = false;
-	pstate = PLAYER_IDLE;
+	if (pstate != PLAYER_ROTATING) {
+		pstate = PLAYER_IDLE;
+	}
 	PLAYER_DIRECTION Predir = pdir;
 	if (!isRotating) {
 
@@ -87,7 +89,7 @@ void Player::Update()
 			pdir = PLAYER_DOWN;
 		}
 	}
-		if (Predir != pdir) {
+		if (Predir != pdir&&pstate!=PLAYER_ROTATING) {
 			isRotating = true;
 			pstate = PLAYER_ROTATING;
 			OldAngle = P_ANGLE[Predir];
@@ -98,15 +100,26 @@ void Player::Update()
 			//transform_.rotate_.y = angle;
 		}
 		else if (pstate == PLAYER_ROTATING) {
-			float disAngle = angle - OldAngle;
-			static float rotateCount = 1.0f;
-			float rate = rotateCount / ROT_FRAME;
-			transform_.rotate_.y = disAngle * rate + OldAngle;
+			float disAngle = P_ANGLE[pdir] - OldAngle;
+			if (disAngle > 180.0f) {
+				disAngle -= 360.0f;
+			}
+			if (disAngle < -180.0f) {
+				disAngle += 360.0f;
+			}
+			static float rotateCount = 0.0f;
 			rotateCount++;
-			if (transform_.rotate_.y >= P_ANGLE[pdir]) {
+
+			float rate = rotateCount / ROT_FRAME;
+			if (rate > 1.0f) rate = 1.0f;
+
+			transform_.rotate_.y = OldAngle + disAngle * rate;
+
+			if (rotateCount >= ROT_FRAME) {
+				transform_.rotate_.y = P_ANGLE[pdir];
 				pstate = PLAYER_IDLE;
 				isRotating = false;
-				rotateCount = 0;
+				rotateCount = 0.0f;
 			}
 		}
 	/*	XMMATRIX rMatrix = XMMatrixRotationY(XMConvertToRadians(transform_.rotate_.y));
@@ -127,6 +140,11 @@ void Player::Draw()
 	case PLAYER_WALK:
 		Model::SetTransform(hModel_Walk, transform_);
 		Model::Draw(hModel_Walk);
+		break;
+	case PLAYER_ROTATING:
+		Model::SetTransform(hSilly, transform_);
+		Model::Draw(hSilly);
+		break;
 	}
 }
 
