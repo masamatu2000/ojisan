@@ -1,13 +1,12 @@
 #pragma once
 #include "Engine/GameObject.h"
 
-
+class Ground;//前方宣言(クラスのポインタだけ使いたいときだけはこれでおｋ,企業にアピールポイントとして使えるので覚えておくべき)
 
 class Player :
     public GameObject
 {
-	int hSilly;
-	int hModel_Walk;
+	
 public:
 	//コンストラクタ
 	//引数：parent  親オブジェクト（SceneManager）
@@ -24,5 +23,10 @@ public:
 
 	//開放
 	void Release() override;
+	void SetGround(Ground* ground) { ground_ = ground; }
+private:
+	int hSilly;
+	int hModel_Walk;
+	Ground* ground_;//地面オブジェクトのポインタ
 };
 

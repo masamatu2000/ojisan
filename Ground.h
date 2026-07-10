@@ -1,8 +1,8 @@
 #pragma once
 #include "Engine/GameObject.h"
-
+#include<vector>
 class Ground :
-    public GameObject
+	public GameObject
 {
 public:
 	//コンストラクタ
@@ -20,7 +20,10 @@ public:
 
 	//開放
 	void Release() override;
+	std::vector<std::vector<int>> GetMapData() { return mapData_; }
 private:
 	int hModel_;
+	int bModel_;
+	std::vector<std::vector<int>> mapData_;
 };
 

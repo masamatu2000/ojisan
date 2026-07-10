@@ -3,6 +3,8 @@
 #include "Engine/Debug.h"
 #include "TestScene.h"
 #include"Engine/Input.h"
+#include<vector>
+#include"Ground.h"
 namespace {
 	enum PLAYER_STATE {
 		PLAYER_IDLE,
@@ -36,6 +38,8 @@ namespace {
 	PLAYER_DIRECTION pdir = PLAYER_DOWN;
 	XMVECTOR P_MOVE[4] = { XMVectorSet(-1, 0, 0, 0),XMVectorSet(1, 0, 0, 0), XMVectorSet(0, 0, 1, 0) ,XMVectorSet(0, 0, -1, 0) };
 	float ROT_FRAME = 30.0f;//回転にかかるスピード
+
+	std::vector<std::vector<int>> gmap;
 }
 
 Player::Player(GameObject* parent)
@@ -43,6 +47,7 @@ Player::Player(GameObject* parent)
 	//swordDirには、初期方向として、ローカルモデルの剣の根っこから
 	//先端までのベクトルとして（0,1,0)を代入しておく
 	//初期位置は原点
+
 }
 
 void Player::Initialize()
@@ -51,6 +56,10 @@ void Player::Initialize()
 	hModel_Walk = Model::Load("Walking.fbx");
 	Model::SetAnimFrame(hSilly, 0, 117, 1.0);
 	Model::SetAnimFrame(hModel_Walk, 0, 59, 1.0);
+	Ground* ground = (Ground*)FindObject("Ground");
+	if (ground!= nullptr) {
+		gmap = ground->GetMapData();
+	}
 }
 
 void Player::Update()
@@ -102,38 +111,60 @@ void Player::Update()
 			pdir = PLAYER_DOWN;
 		}
 	}
-		if (Predir != pdir&&pstate!=PLAYER_ROTATING) {
-			isRotating = true;
-			pstate = PLAYER_ROTATING;
-			OldAngle = P_ANGLE[Predir];
-		}
-		if (pstate != PLAYER_IDLE&&pstate!=PLAYER_ROTATING) {
-			move = P_MOVE[pdir];
-			angle = P_ANGLE[pdir];
-			//transform_.rotate_.y = angle;
-		}
-		//回転処理
-		else if (pstate == PLAYER_ROTATING) {
-			float disAngle = TurnAngleOptmization(P_ANGLE[pdir] - OldAngle);
-			static float rotateCount = 0.0f;
-			rotateCount++;
+	if (Predir != pdir&&pstate!=PLAYER_ROTATING) {
+		isRotating = true;
+		pstate = PLAYER_ROTATING;
+		OldAngle = P_ANGLE[Predir];
+	}
+	if (pstate != PLAYER_IDLE&&pstate!=PLAYER_ROTATING) {
+		move = P_MOVE[pdir];
+		angle = P_ANGLE[pdir];
+	}
+	//回転処理
+	else if (pstate == PLAYER_ROTATING) {
+		float disAngle = TurnAngleOptmization(P_ANGLE[pdir] - OldAngle);
+		static float rotateCount = 0.0f;
+		rotateCount++;
 
-			float rate = rotateCount / ROT_FRAME;
-			if (rate > 1.0f) rate = 1.0f;
+		float rate = rotateCount / ROT_FRAME;
+		if (rate > 1.0f) rate = 1.0f;
 
-			transform_.rotate_.y = OldAngle + disAngle * rate;
+		transform_.rotate_.y = OldAngle + disAngle * rate;
 
-			if (rotateCount >= ROT_FRAME) {
-				transform_.rotate_.y = P_ANGLE[pdir];
-				pstate = PLAYER_IDLE;
-				isRotating = false;
-				rotateCount = 0.0f;
-			}
+		if (rotateCount >= ROT_FRAME) {
+			transform_.rotate_.y = P_ANGLE[pdir];
+			pstate = PLAYER_IDLE;
+			isRotating = false;
+			rotateCount = 0.0f;
 		}
-	/*	XMMATRIX rMatrix = XMMatrixRotationY(XMConvertToRadians(transform_.rotate_.y));
-		XMVector3TransformCoord(move, rMatrix);*/
-		pos += SPEED * move;
-		XMStoreFloat3(&transform_.position_, pos);
+	}
+	XMVECTOR MapPos = pos + SPEED * move;
+
+	XMFLOAT3 PosToMap;
+	XMStoreFloat3(&PosToMap, MapPos);
+
+	constexpr float MAP_SIZE = 4.0f;
+	constexpr float MAP_START_X = -20.0f;
+	constexpr float MAP_START_Z = -20.0f;
+
+	int MapX = static_cast<int>(
+		(PosToMap.x - MAP_START_X) / MAP_SIZE);
+
+	int MapZ = static_cast<int>(
+		((PosToMap.z - MAP_START_Z) / MAP_SIZE)
+		);
+
+	if (!gmap.empty() &&
+		MapZ >= 0 &&
+		MapZ < static_cast<int>(gmap.size()) &&
+		MapX >= 0 &&
+		MapX < static_cast<int>(gmap[MapZ].size()))
+	{
+		if (gmap[MapZ][MapX] != 1) {
+			pos += SPEED * move;
+			XMStoreFloat3(&transform_.position_, pos);
+		}
+	}
 }
 
 void Player::Draw()
