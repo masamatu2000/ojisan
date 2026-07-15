@@ -24,6 +24,10 @@ public:
 private:
 	int hModel_;
 	int bModel_;
+	int iModel_;
+	int piModel_;
 	std::vector<std::vector<int>> mapData_;
+	int mapWidth_;
+	int mapHeight_;
 };
 
