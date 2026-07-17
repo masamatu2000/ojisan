@@ -99,6 +99,7 @@
     </ClCompile>
     <ClCompile Include="Ground.cpp" />
     <ClCompile Include="Enemy.cpp" />
+    <ClCompile Include="Feed.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\BoxCollider.h">
@@ -177,6 +178,7 @@
     </ClInclude>
     <ClInclude Include="Ground.h" />
     <ClInclude Include="Enemy.h" />
+    <ClInclude Include="Feed.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Assets\Shader\Simple2D.hlsl">

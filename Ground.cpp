@@ -38,6 +38,16 @@ void Ground::Initialize()
 	for (int y = 0;y < mapHeight_;y++) {
 		for (int x = 0;x < mapWidth_;x++) {
 			mapData_[y][x] = csv.GetValue(y, x);
+			if (mapData_[y][x] == 0||mapData_[y][x]==2) {
+				Feed* feed = (Feed*)Instantiate<Feed>(this);
+				feed->SetPosition(float(-18 + x * 4),0.5f, float(-18 + y * 4));
+				if (mapData_[y][x] == 0) {
+					feed->SetFeedtype(FEEDTYPE_NORMAL);
+				}
+				if (mapData_[y][x] == 2) {
+					feed->SetFeedtype(FEEDTYPE_POWER);
+				}
+			}
 		}
 	}
 }
@@ -59,7 +69,7 @@ void Ground::Draw()
 				Model::SetTransform(bModel_, bt);
 				Model::Draw(bModel_);
 			}
-			if (mapData_[j][i] == 0) {
+		    /*if (mapData_[j][i] == 0) {
 				Transform it;
 				it.position_ = { float(-18 + i * 4),2,float(-18 + j * 4) };
 				Model::SetTransform(iModel_, it);
@@ -68,9 +78,10 @@ void Ground::Draw()
 			if (mapData_[j][i] == 2) {
 				Transform pit;
 				pit.position_ = { float(-18 + i * 4),2,float(-18 + j * 4) };
+				pit.rotate_.y+=1.0f;
 				Model::SetTransform(piModel_, pit);
 				Model::Draw(piModel_);
-			}
+			}*/
 		}
 	}
 }
