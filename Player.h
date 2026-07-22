@@ -28,10 +28,13 @@ public:
 		if (collision != nullptr) { return collision; }
 		else { return nullptr; }
 	}
+	int GetScore() { return score_; }
+	void SetScore(int score) { score_ = score; }
 private:
 	int hSilly;
 	int hModel_Walk;
 	Ground* ground_;//地面オブジェクトのポインタ
 	SphereCollider* collision;
+	int score_;
 };
 

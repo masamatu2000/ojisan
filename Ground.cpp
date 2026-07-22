@@ -17,7 +17,7 @@ namespace {
 		{0,0,0,0,0,0,0,0,0,0}
 	};*/
 }
-Ground::Ground(GameObject* parent):GameObject(parent,"Ground"), hModel_(-1), bModel_(-1)
+Ground::Ground(GameObject* parent):GameObject(parent,"Ground"), hModel_(-1), bModel_(-1),FeedNum_(0)
 {
 	
 }
@@ -43,9 +43,11 @@ void Ground::Initialize()
 				feed->SetPosition(float(-18 + x * 4),0.5f, float(-18 + y * 4));
 				if (mapData_[y][x] == 0) {
 					feed->SetFeedtype(FEEDTYPE_NORMAL);
+					FeedNum_++;
 				}
 				if (mapData_[y][x] == 2) {
 					feed->SetFeedtype(FEEDTYPE_POWER);
+					FeedNum_++;
 				}
 			}
 		}

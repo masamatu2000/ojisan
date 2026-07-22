@@ -43,7 +43,7 @@ namespace {
 }
 
 Player::Player(GameObject* parent)
-	:GameObject(parent,"Player"), hSilly(-1), hModel_Walk(-1), collision(nullptr) {
+	:GameObject(parent,"Player"), hSilly(-1), hModel_Walk(-1), collision(nullptr) ,score_(0){
 	//swordDirには、初期方向として、ローカルモデルの剣の根っこから
 	//先端までのベクトルとして（0,1,0)を代入しておく
 	//初期位置は原点

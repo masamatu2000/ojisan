@@ -22,6 +22,8 @@ public:
 	//開放
 	void Release() override;
 	std::vector<std::vector<int>> GetMapData() { return mapData_; }
+	int GetFeedNum() { return FeedNum_; }
+	void SetFeedNum(int fNum) { FeedNum_ = fNum; }
 private:
 	int hModel_;
 	int bModel_;
@@ -30,5 +32,6 @@ private:
 	std::vector<std::vector<int>> mapData_;
 	int mapWidth_;
 	int mapHeight_;
+	int FeedNum_;
 };
 

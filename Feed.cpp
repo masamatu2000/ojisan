@@ -1,7 +1,8 @@
 #include "Feed.h"
 #include"Engine/Model.h"
 #include"Player.h"
-Feed::Feed(GameObject*parent):GameObject(parent, "Feed"), hModel_(-1),type_(FEEDTYPE_NORMAL),score_(0)
+#include"Ground.h"
+Feed::Feed(GameObject*parent):GameObject(parent, "Feed"), hModel_(-1),type_(FEEDTYPE_NORMAL)
 {
 }
 
@@ -13,6 +14,7 @@ void Feed::Initialize()
 {
 	collision= new SphereCollider(XMFLOAT3(0, 0.20f, 0), 1.0f);
 	pl_ =(Player*)FindObject("Player");
+	gr_ =(Ground*)FindObject("Ground");
 }
 
 void Feed::Update()
@@ -27,6 +29,9 @@ void Feed::Update()
 				OnCollision(pl_);
 			}
 		}
+	}
+	else {
+		pl_= (Player*)FindObject("Player");
 	}
 }
 
@@ -46,20 +51,27 @@ void Feed::SetFeedtype(FeedType type)
 	if (type_ == FEEDTYPE_NORMAL) {
 		collision = new SphereCollider(XMFLOAT3(0, 0.20f, 0), 1.0f);
 		AddCollider(collision);
-		score_ = 1;
+		
 		hModel_ = Model::Load("Item.fbx");
 	}
 	else if (type_ == FEEDTYPE_POWER) {
 		collision = new SphereCollider(XMFLOAT3(0, 0.20f, 0), 0.5f);
 		AddCollider(collision);
 		hModel_ = Model::Load("PowerItem.fbx");
-		score_ = 5;
+		
 	}
 }
 
 void Feed::OnCollision(GameObject* pTarget)
 {
 	if (pTarget->GetObjectName() == "Player") {
+		if (type_ == FEEDTYPE_NORMAL&&pl_!=nullptr) {
+			pl_->SetScore(pl_->GetScore() + 3);
+		}
+		else if (type_ == FEEDTYPE_POWER && pl_ != nullptr) {
+			pl_->SetScore(pl_->GetScore() + 5);
+		}
+		gr_->SetFeedNum(gr_->GetFeedNum() - 1);
 		KillMe();
 	}
 }

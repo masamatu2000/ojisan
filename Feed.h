@@ -1,12 +1,14 @@
 #pragma once
 #include "Engine/GameObject.h"
 #include"Engine/Collider.h"
+
 enum FeedType {
 	FEEDTYPE_NORMAL,
 	FEEDTYPE_POWER,
 	FEEDTYPE_MAX
 };
 class Player;
+class Ground;
 class Feed :
     public GameObject
 {
@@ -32,8 +34,8 @@ public:
 private:
 	int hModel_;
 	FeedType type_;
-	int score_;
 	Player* pl_;
 	SphereCollider* collision;
+	Ground* gr_;
 };
 
