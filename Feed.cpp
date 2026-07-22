@@ -20,10 +20,12 @@ void Feed::Update()
 	if (type_ == FEEDTYPE_POWER) {
 		transform_.rotate_.y += 1.0f;
 	}
-	SphereCollider* psc = pl_->GetCollider();
-	if (psc != nullptr) {
-		if (collision->IsHit(psc)) {
-			OnCollision(pl_);
+	if (pl_ != nullptr) {
+		SphereCollider* psc = pl_->GetCollider();
+		if (psc != nullptr) {
+			if (collision->IsHit(psc)) {
+				OnCollision(pl_);
+			}
 		}
 	}
 }
