@@ -39,7 +39,7 @@ void Ground::Initialize()
 		for (int x = 0;x < mapWidth_;x++) {
 			mapData_[y][x] = csv.GetValue(y, x);
 			if (mapData_[y][x] == 0||mapData_[y][x]==2) {
-				Feed* feed = (Feed*)Instantiate<Feed>(this);
+				/*Feed* feed = (Feed*)Instantiate<Feed>(this);
 				feed->SetPosition(float(-18 + x * 4),0.5f, float(-18 + y * 4));
 				if (mapData_[y][x] == 0) {
 					feed->SetFeedtype(FEEDTYPE_NORMAL);
@@ -48,10 +48,11 @@ void Ground::Initialize()
 				if (mapData_[y][x] == 2) {
 					feed->SetFeedtype(FEEDTYPE_POWER);
 					FeedNum_++;
-				}
+				}*/
 			}
 		}
 	}
+
 }
 
 void Ground::Update()
@@ -60,30 +61,42 @@ void Ground::Update()
 
 void Ground::Draw()
 {
+	float angleY = 90;
+	float angleZ = 90;
+	transform_.rotate_ = { 0,angleY,angleZ };
 	Model::SetTransform(hModel_, transform_);
 	Model::Draw(hModel_);
 	for (int j = 0;j < 10;j++) {
+		/*	Transform bt;
+			bt.position_ = { float(-18 + j * 4),2,float(-18 + j * 4) };
+			Model::SetTransform(bModel_, bt);
+			Model::Draw(bModel_);*/
 		for (int i = 0;i < 10;i++) {
 			if (mapData_[j][i] == 1) {
 				Transform bt;
 				bt.scale_ = { 4.0f,2.0f,4.0f };
-				bt.position_ = { float(-18 + i * 4),2,float(-18+j*4)};
+				bt.position_ = { float(-18 + i * 4),float(-18+j * 4),0 };
+				float angleY = 90;
+				float angleZ = 90;
+				bt.rotate_ = { 0,angleY,angleZ };
 				Model::SetTransform(bModel_, bt);
 				Model::Draw(bModel_);
 			}
-		    /*if (mapData_[j][i] == 0) {
-				Transform it;
-				it.position_ = { float(-18 + i * 4),2,float(-18 + j * 4) };
-				Model::SetTransform(iModel_, it);
-				Model::Draw(iModel_);
-			}
-			if (mapData_[j][i] == 2) {
-				Transform pit;
-				pit.position_ = { float(-18 + i * 4),2,float(-18 + j * 4) };
-				pit.rotate_.y+=1.0f;
-				Model::SetTransform(piModel_, pit);
-				Model::Draw(piModel_);
-			}*/
+
+			//    /*if (mapData_[j][i] == 0) {
+			//		Transform it;
+			//		it.position_ = { float(-18 + i * 4),2,float(-18 + j * 4) };
+			//		Model::SetTransform(iModel_, it);
+			//		Model::Draw(iModel_);
+			//	}
+			//	if (mapData_[j][i] == 2) {
+			//		Transform pit;
+			//		pit.position_ = { float(-18 + i * 4),2,float(-18 + j * 4) };
+			//		pit.rotate_.y+=1.0f;
+			//		Model::SetTransform(piModel_, pit);
+			//		Model::Draw(piModel_);
+			//	}*/
+			//}
 		}
 	}
 }

@@ -23,4 +23,5 @@ public:
 	void Release() override;
 private:
 	Text* pText_;
+	bool CompleteFeedGet_;
 };
