@@ -27,8 +27,8 @@ void TestScene::Initialize()
 	pPlayer=Instantiate <Player>(this);
 	pPlayer->SetGround(pGround);
 	Instantiate<Enemy>(this);
-	Camera::SetPosition({ 0,-2,-30 });
-	Camera::SetTarget({ 0,-5,-12 });
+	Camera::SetPosition({ pPlayer->GetPosition().x,-2,-30});
+	Camera::SetTarget({pPlayer->GetPosition().x,-6,0});
 
 	pText_ = new Text;
 	pText_->Initialize();
@@ -39,6 +39,8 @@ void TestScene::Initialize()
 //XV
 void TestScene::Update()
 {
+	Camera::SetPosition({ pPlayer->GetPosition().x,-2,-30 });
+	Camera::SetTarget({ pPlayer->GetPosition().x,-6,0 });
 	myscore=pPlayer->GetScore();
 	FeedNum_ = pGround->GetFeedNum();
 	if (FeedNum_ <= 0) {
