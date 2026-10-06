@@ -16,6 +16,7 @@ namespace {
 		{0,1,1,1,0,0,1,1,1,0},
 		{0,0,0,0,0,0,0,0,0,0}
 	};*/
+	
 }
 Ground::Ground(GameObject* parent):GameObject(parent,"Ground"), hModel_(-1), bModel_(-1),FeedNum_(0)
 {
@@ -57,46 +58,86 @@ void Ground::Initialize()
 
 void Ground::Update()
 {
+	
 }
 
 void Ground::Draw()
 {
-	float angleY = 90;
-	float angleZ = 90;
-	transform_.rotate_ = { 0,angleY,angleZ };
+	float angleY = 90.0f;
+	float angleZ = 90.0f;
+
+	const float moveMaxFrame = 60.0f;
+	const float moveDistance = 4.0f;
+
+	static float currentFrame = 0.0f;
+	static float frameDirection = 1.0f;
+
+	// フレームを進める・戻す
+	currentFrame += frameDirection;
+
+	if (currentFrame >= moveMaxFrame)
+	{
+		currentFrame = moveMaxFrame;
+		frameDirection = -1.0f;
+	}
+	else if (currentFrame <= (moveMaxFrame*-1))
+	{
+		currentFrame = moveMaxFrame*-1;
+		frameDirection = 1.0f;
+	}
+
+	// 0.0～1.0を往復
+	float rate = currentFrame / moveMaxFrame;
+
+	transform_.rotate_ = { 0.0f, angleY, angleZ };
 	Model::SetTransform(hModel_, transform_);
 	Model::Draw(hModel_);
-	for (int j = 0;j < 10;j++) {
-		/*	Transform bt;
-			bt.position_ = { float(-18 + j * 4),2,float(-18 + j * 4) };
-			Model::SetTransform(bModel_, bt);
-			Model::Draw(bModel_);*/
-		for (int i = 0;i < 10;i++) {
-			if (mapData_[j][i] == 1) {
+
+	for (int y = 0; y < mapHeight_; y++)
+	{
+		for (int x = 0; x < mapWidth_; x++)
+		{
+			if (mapData_[y][x] == 1)
+			{
 				Transform bt;
-				bt.scale_ = { 4.0f,2.0f,4.0f };
-				bt.position_ = { float(-18 + i * 4),float(-18+j * 4),0 };
-				float angleY = 90;
-				float angleZ = 90;
-				bt.rotate_ = { 0,angleY,angleZ };
+
+				bt.scale_ = { 4.0f, 2.0f, 4.0f };
+				bt.position_ = {
+					float(-18 + x * 4),
+					float(-18 + y * 4),
+					0.0f
+				};
+
+				bt.rotate_ = { 0.0f, angleY, angleZ };
+
 				Model::SetTransform(bModel_, bt);
 				Model::Draw(bModel_);
 			}
 
-			//    /*if (mapData_[j][i] == 0) {
-			//		Transform it;
-			//		it.position_ = { float(-18 + i * 4),2,float(-18 + j * 4) };
-			//		Model::SetTransform(iModel_, it);
-			//		Model::Draw(iModel_);
-			//	}
-			//	if (mapData_[j][i] == 2) {
-			//		Transform pit;
-			//		pit.position_ = { float(-18 + i * 4),2,float(-18 + j * 4) };
-			//		pit.rotate_.y+=1.0f;
-			//		Model::SetTransform(piModel_, pit);
-			//		Model::Draw(piModel_);
-			//	}*/
-			//}
+			if (mapData_[y][x] == 3)
+			{
+				Transform bt;
+
+				bt.scale_ = { 4.0f, 2.0f, 4.0f };
+
+				float startX = float(-18 + x * 4);
+				float endX = startX + moveDistance;
+
+				// LerpでstartXとendXの間を往復
+				float currentX =
+					startX + (endX - startX) * rate;
+
+				bt.position_ = {
+					currentX,
+					float(-18 + y * 4),
+					0.0f
+				};
+
+				bt.rotate_ = { 0.0f, angleY, angleZ };
+
+				Model::SetTransform(bModel_, bt);
+				Model::Draw(bModel_);
+			}
 		}
 	}
 }
