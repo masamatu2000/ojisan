@@ -53,94 +53,86 @@ void Ground::Initialize()
 			}
 		}
 	}
+	blocks_.clear();
+	moveFrame_ = 0.0f;
+	moveDirection_ = 1.0f;
+
+	for (int y = 0; y < mapHeight_; ++y)
+	{
+		for (int x = 0; x < mapWidth_; ++x)
+		{
+			int type = mapData_[y][x];
+
+			if (type != 1 && type != 3)
+			{
+				continue;
+			}
+
+			BlockData block;
+			block.position = {
+				float(-18 + x * 4),
+				float(-18 + y * 4),
+				0.0f
+			};
+			block.startX = block.position.x;
+			block.moving = (type == 3);
+
+			blocks_.push_back(block);
+		}
+	}
 
 }
 
 void Ground::Update()
 {
-	
+	constexpr float MOVE_MAX_FRAME = 60.0f;
+	constexpr float MOVE_DISTANCE = 4.0f;
+
+	moveFrame_ += moveDirection_;
+
+	if (moveFrame_ >= MOVE_MAX_FRAME)
+	{
+		moveFrame_ = MOVE_MAX_FRAME;
+		moveDirection_ = -1.0f;
+	}
+	else if (moveFrame_ <= -MOVE_MAX_FRAME)
+	{
+		moveFrame_ = -MOVE_MAX_FRAME;
+		moveDirection_ = 1.0f;
+	}
+
+	// -1～1を往復
+	float rate = moveFrame_ / MOVE_MAX_FRAME;
+
+	for (auto& block : blocks_)
+	{
+		if (block.moving)
+		{
+			block.position.x =
+				block.startX + MOVE_DISTANCE * rate;
+		}
+	}
 }
 
 void Ground::Draw()
 {
-	float angleY = 90.0f;
-	float angleZ = 90.0f;
-
-	const float moveMaxFrame = 60.0f;
-	const float moveDistance = 4.0f;
-
-	static float currentFrame = 0.0f;
-	static float frameDirection = 1.0f;
-
-	// フレームを進める・戻す
-	currentFrame += frameDirection;
-
-	if (currentFrame >= moveMaxFrame)
-	{
-		currentFrame = moveMaxFrame;
-		frameDirection = -1.0f;
-	}
-	else if (currentFrame <= (moveMaxFrame*-1))
-	{
-		currentFrame = moveMaxFrame*-1;
-		frameDirection = 1.0f;
-	}
-
-	// 0.0～1.0を往復
-	float rate = currentFrame / moveMaxFrame;
-
-	transform_.rotate_ = { 0.0f, angleY, angleZ };
+	transform_.rotate_ = { 0.0f, 90.0f, 90.0f };
 	Model::SetTransform(hModel_, transform_);
 	Model::Draw(hModel_);
 
-	for (int y = 0; y < mapHeight_; y++)
+	for (const auto& block : blocks_)
 	{
-		for (int x = 0; x < mapWidth_; x++)
-		{
-			if (mapData_[y][x] == 1)
-			{
-				Transform bt;
+		Transform bt;
+		bt.scale_ = { 4.0f, 2.0f, 4.0f };
+		bt.position_ = block.position;
+		bt.rotate_ = { 0.0f, 90.0f, 90.0f };
 
-				bt.scale_ = { 4.0f, 2.0f, 4.0f };
-				bt.position_ = {
-					float(-18 + x * 4),
-					float(-18 + y * 4),
-					0.0f
-				};
-
-				bt.rotate_ = { 0.0f, angleY, angleZ };
-
-				Model::SetTransform(bModel_, bt);
-				Model::Draw(bModel_);
-			}
-
-			if (mapData_[y][x] == 3)
-			{
-				Transform bt;
-
-				bt.scale_ = { 4.0f, 2.0f, 4.0f };
-
-				float startX = float(-18 + x * 4);
-				float endX = startX + moveDistance;
-
-				// LerpでstartXとendXの間を往復
-				float currentX =
-					startX + (endX - startX) * rate;
-
-				bt.position_ = {
-					currentX,
-					float(-18 + y * 4),
-					0.0f
-				};
-
-				bt.rotate_ = { 0.0f, angleY, angleZ };
-
-				Model::SetTransform(bModel_, bt);
-				Model::Draw(bModel_);
-			}
-		}
+		Model::SetTransform(bModel_, bt);
+		Model::Draw(bModel_);
 	}
 }
+
+
 
 void Ground::Release()
 {

@@ -5,6 +5,7 @@
 #include"Engine/Input.h"
 #include<vector>
 #include"Ground.h"
+#include<cmath>
 namespace {
 	enum PLAYER_STATE {
 		PLAYER_IDLE,
@@ -38,7 +39,7 @@ namespace {
 	PLAYER_DIRECTION pdir = PLAYER_DOWN;
 	XMVECTOR P_MOVE[4] = { XMVectorSet(-1, 0, 0, 0),XMVectorSet(1, 0, 0, 0), XMVectorSet(0, 0, 1, 0) ,XMVectorSet(0, 0, -1, 0) };
 	float ROT_FRAME = 30.0f;//回転にかかるスピード
-
+	
 	std::vector<std::vector<int>> gmap;
 }
 
@@ -67,108 +68,282 @@ void Player::Initialize()
 
 void Player::Update()
 {
-	//transform_.rotate_.y +=1;
-	//static float angle = 0.0;
-	//angle = angle + 0.3f;
-	//XMMATRIX scale = XMMatrixScaling(1.0f, 1.0f, 1.0f);
-	//XMMATRIX rotateX = XMMatrixRotationX(XMConvertToRadians(angle));
-	//XMMATRIX rotate = XMMatrixRotationY(XMConvertToRadians(angle));
-	//XMMATRIX translate = XMMatrixTranslation(1.0f, 0.0f, 0.0f);
+	constexpr float GRAVITY = 0.01f;
+	constexpr float JUMP_SPEED = 0.35f;
+	constexpr float GROUND_Y = -16.0f;
+	constexpr float SPEED = 0.05f;
 
-	//SetWorldMatrix(scale *  rotate * translate);
+	constexpr float MAP_SIZE = 4.0f;
 
-	XMVECTOR pos = XMLoadFloat3(&transform_.position_);
-	XMVECTOR move = XMVectorSet(0,0,0,0);
-	const float SPEED = 0.05f;
-	static float angle = 0;
-	static float OldAngle;
+	// マスの端の座標。
+	// Ground側でマスの中心を -20 + x * 4 にしているなら、
+	// ここは両方 -22.0f にしてください。
+	constexpr float MAP_START_X = -20.0f;
+	constexpr float MAP_START_Z = -20.0f;
+	constexpr float MAP_START_Y = -20.0f; // MAP_START_Z の代わり
+	static float velocityY = 0.0f;
+	static float oldAngle = 0.0f;
+	static float rotateCount = 0.0f;
 	static bool isRotating = false;
-	if (pstate != PLAYER_ROTATING) {//回転中はアイドル状態にしない
+	static bool grounded = true;
+	static bool previousSpace = false;
+
+	// 乗っているブロックの番号。-1は乗っていない
+	static int ridingBlock = -1;
+	static float ridingBlockX = 0.0f;
+
+	Ground* ground = static_cast<Ground*>(FindObject("Ground"));
+	if (ground == nullptr)
+	{
+		return;
+	}
+
+	const auto& blocks = ground->GetBlocks();
+
+	bool space = Input::IsKey(DIK_SPACE);
+	bool jumpPressed = space && !previousSpace;
+	previousSpace = space;
+
+	XMFLOAT3 nextPos = transform_.position_;
+	XMVECTOR move = XMVectorZero();
+
+	if (!isRotating)
+	{
 		pstate = PLAYER_IDLE;
-	}
-	PLAYER_DIRECTION Predir = pdir;
-	if (!isRotating) {
+		PLAYER_DIRECTION previousDirection = pdir;
 
-		if (Input::IsKey(DIK_LEFT)) {
-			if (pstate == PLAYER_IDLE) {
-				pstate = PLAYER_WALK;
-			}
+		if (Input::IsKey(DIK_LEFT))
+		{
 			pdir = PLAYER_LEFT;
+			pstate = PLAYER_WALK;
 		}
-		if (Input::IsKey(DIK_RIGHT)) {
-			if (pstate == PLAYER_IDLE) {
-				pstate = PLAYER_WALK;
-			}
+		if (Input::IsKey(DIK_RIGHT))
+		{
 			pdir = PLAYER_RIGHT;
+			pstate = PLAYER_WALK;
 		}
-		if (Input::IsKey(DIK_UP)) {
-			if (pstate == PLAYER_IDLE) {
-				pstate = PLAYER_WALK;
-			}
+		if (Input::IsKey(DIK_UP))
+		{
 			pdir = PLAYER_UP;
+			pstate = PLAYER_WALK;
 		}
-		if (Input::IsKey(DIK_DOWN)) {
-			if (pstate == PLAYER_IDLE) {
-				pstate = PLAYER_WALK;
-			}
+		if (Input::IsKey(DIK_DOWN))
+		{
 			pdir = PLAYER_DOWN;
+			pstate = PLAYER_WALK;
 		}
-	}
-	if (Predir != pdir&&pstate!=PLAYER_ROTATING) {
-		isRotating = true;
-		pstate = PLAYER_ROTATING;
-		OldAngle = P_ANGLE[Predir];
-	}
-	if (pstate != PLAYER_IDLE&&pstate!=PLAYER_ROTATING) {
-		move = P_MOVE[pdir];
-		angle = P_ANGLE[pdir];
-	}
-	//回転処理
-	else if (pstate == PLAYER_ROTATING) {
-		float disAngle = TurnAngleOptmization(P_ANGLE[pdir] - OldAngle);
-		static float rotateCount = 0.0f;
-		rotateCount++;
+		if (jumpPressed && grounded)
+		{
+			grounded = false;
+			ridingBlock = -1;
+			velocityY = JUMP_SPEED;
+		}
 
-		float rate = rotateCount / ROT_FRAME;
-		if (rate > 1.0f) rate = 1.0f;
-
-		transform_.rotate_.y = OldAngle + disAngle * rate;
-
-		if (rotateCount >= ROT_FRAME) {
-			transform_.rotate_.y = P_ANGLE[pdir];
-			pstate = PLAYER_IDLE;
-			isRotating = false;
+		if (previousDirection != pdir)
+		{
+			isRotating = true;
+			pstate = PLAYER_ROTATING;
+			oldAngle = transform_.rotate_.y;
 			rotateCount = 0.0f;
 		}
 	}
-	XMVECTOR MapPos = pos + SPEED * move;
 
-	XMFLOAT3 PosToMap;
-	XMStoreFloat3(&PosToMap, MapPos);
-
-	constexpr float MAP_SIZE = 4.0f;
-	constexpr float MAP_START_X = -20.0f;
-	constexpr float MAP_START_Z = -20.0f;
-
-	int MapX = static_cast<int>(
-		(PosToMap.x - MAP_START_X) / MAP_SIZE);
-
-	int MapZ = static_cast<int>(
-		((PosToMap.z - MAP_START_Z) / MAP_SIZE)
-		);
-
-	if (!gmap.empty() &&
-		MapZ >= 0 &&
-		MapZ < static_cast<int>(gmap.size()) &&
-		MapX >= 0 &&
-		MapX < static_cast<int>(gmap[MapZ].size()))
+	// 回転中は移動しない
+	if (isRotating)
 	{
-		if (gmap[MapZ][MapX] != 1) {
-			pos += SPEED * move;
-			XMStoreFloat3(&transform_.position_, pos);
+		float difference =
+			TurnAngleOptmization(P_ANGLE[pdir] - oldAngle);
+
+		rotateCount += 1.0f;
+
+		float rate = rotateCount / ROT_FRAME;
+		if (rate > 1.0f)
+		{
+			rate = 1.0f;
+		}
+
+		transform_.rotate_.y = oldAngle + difference * rate;
+
+		if (rotateCount >= ROT_FRAME)
+		{
+			transform_.rotate_.y = P_ANGLE[pdir];
+			isRotating = false;
+			pstate = PLAYER_IDLE;
+			rotateCount = 0.0f;
 		}
 	}
-	
+	else if (pstate == PLAYER_WALK)
+	{
+		move = P_MOVE[pdir];
+		transform_.rotate_.y = P_ANGLE[pdir];
+	}
+
+	// 判定用サイズ：描画モデルの実寸に合わせて調整する
+	constexpr float BLOCK_HALF_X = 2.0f;
+	constexpr float BLOCK_HALF_Y = 2.0f;
+	constexpr float BLOCK_HALF_Z = 2.0f;
+
+	constexpr float PLAYER_HALF_X = 0.3f;
+	constexpr float PLAYER_HALF_Z = 0.3f;
+	constexpr float PLAYER_HEIGHT = 1.0f;
+	constexpr float EPSILON = 0.001f;
+
+	// 乗っているブロックと一緒に動く
+	if (grounded &&
+		ridingBlock >= 0 &&
+		ridingBlock < static_cast<int>(blocks.size()))
+	{
+		const auto& block = blocks[ridingBlock];
+
+		nextPos.x += block.position.x - ridingBlockX;
+		ridingBlockX = block.position.x;
+	}
+
+	// 左右・奥行きの移動
+	XMFLOAT3 moveDirection;
+	XMStoreFloat3(&moveDirection, move);
+
+	float candidateX = nextPos.x + moveDirection.x * SPEED;
+	float candidateZ = nextPos.z + moveDirection.z * SPEED;
+
+	// ブロックの側面に当たるか確認
+	bool blocked = false;
+
+	for (const auto& block : blocks)
+	{
+		float left = block.position.x - BLOCK_HALF_X;
+		float right = block.position.x + BLOCK_HALF_X;
+		float bottom = block.position.y - BLOCK_HALF_Y;
+		float top = block.position.y + BLOCK_HALF_Y;
+
+		bool overlapX =
+			candidateX + PLAYER_HALF_X > left + EPSILON &&
+			candidateX - PLAYER_HALF_X < right - EPSILON;
+
+		bool overlapY =
+			nextPos.y + PLAYER_HEIGHT > bottom + EPSILON &&
+			nextPos.y < top - EPSILON;
+
+		bool overlapZ =
+			std::fabs(candidateZ - block.position.z) <
+			BLOCK_HALF_Z + PLAYER_HALF_Z;
+
+		if (overlapX && overlapY && overlapZ)
+		{
+			blocked = true;
+			break;
+		}
+	}
+
+	if (!blocked)
+	{
+		nextPos.x = candidateX;
+		nextPos.z = candidateZ;
+	}
+
+	// 毎フレーム重力をかける。
+	// ブロックから歩いて離れたときも落下する。
+	float oldFootY = nextPos.y;
+
+	velocityY -= GRAVITY;
+	float candidateY = oldFootY + velocityY;
+
+	grounded = false;
+	ridingBlock = -1;
+
+	// 下向きに移動しているなら着地判定
+	if (velocityY <= 0.0f)
+	{
+		float landingY = GROUND_Y;
+		int landingBlock = -1;
+
+		for (int i = 0; i < static_cast<int>(blocks.size()); ++i)
+		{
+			const auto& block = blocks[i];
+
+			float top = block.position.y + BLOCK_HALF_Y;
+
+			bool overlapX =
+				nextPos.x + PLAYER_HALF_X >
+				block.position.x - BLOCK_HALF_X &&
+				nextPos.x - PLAYER_HALF_X <
+				block.position.x + BLOCK_HALF_X;
+
+			bool overlapZ =
+				std::fabs(nextPos.z - block.position.z) <
+				BLOCK_HALF_Z + PLAYER_HALF_Z;
+
+			// 前の足元は上面より上、
+			// 移動後の足元は上面以下になった
+			bool crossedTop =
+				oldFootY >= top - EPSILON &&
+				candidateY <= top;
+
+			if (overlapX && overlapZ && crossedTop &&
+				top >= landingY)
+			{
+				landingY = top;
+				landingBlock = i;
+			}
+		}
+
+		if (candidateY <= landingY &&
+			oldFootY >= landingY - EPSILON)
+		{
+			candidateY = landingY;
+			velocityY = 0.0f;
+			grounded = true;
+			ridingBlock = landingBlock;
+
+			if (ridingBlock >= 0)
+			{
+				ridingBlockX = blocks[ridingBlock].position.x;
+			}
+		}
+	}
+	else
+	{
+		// 上昇中は頭がブロックの下面に当たるか確認
+		float oldHeadY = oldFootY + PLAYER_HEIGHT;
+		float nextHeadY = candidateY + PLAYER_HEIGHT;
+		float hitBottom = 0.0f;
+		bool hitCeiling = false;
+
+		for (const auto& block : blocks)
+		{
+			float bottom = block.position.y - BLOCK_HALF_Y;
+
+			bool overlapX =
+				nextPos.x + PLAYER_HALF_X >
+				block.position.x - BLOCK_HALF_X &&
+				nextPos.x - PLAYER_HALF_X <
+				block.position.x + BLOCK_HALF_X;
+
+			bool overlapZ =
+				std::fabs(nextPos.z - block.position.z) <
+				BLOCK_HALF_Z + PLAYER_HALF_Z;
+
+			if (overlapX && overlapZ &&
+				oldHeadY <= bottom + EPSILON &&
+				nextHeadY >= bottom)
+			{
+				if (!hitCeiling || bottom < hitBottom)
+				{
+					hitBottom = bottom;
+					hitCeiling = true;
+				}
+			}
+		}
+
+		if (hitCeiling)
+		{
+			candidateY = hitBottom - PLAYER_HEIGHT;
+			velocityY = 0.0f;
+		}
+	}
+
+	nextPos.y = candidateY;
+	transform_.position_ = nextPos;
 }
 
 void Player::Draw()

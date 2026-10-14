@@ -24,6 +24,17 @@ public:
 	std::vector<std::vector<int>> GetMapData() { return mapData_; }
 	int GetFeedNum() { return FeedNum_; }
 	void SetFeedNum(int fNum) { FeedNum_ = fNum; }
+	struct BlockData
+	{
+		XMFLOAT3 position;
+		float startX;
+		bool moving;
+	};
+
+	const std::vector<BlockData>& GetBlocks() const
+	{
+		return blocks_;
+	}
 private:
 	int hModel_;
 	int bModel_;
@@ -33,5 +44,8 @@ private:
 	int mapWidth_;
 	int mapHeight_;
 	int FeedNum_;
+	std::vector<BlockData> blocks_;
+	float moveFrame_ = 0.0f;
+	float moveDirection_ = 1.0f;
 };
 
